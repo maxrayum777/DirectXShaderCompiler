@@ -9,7 +9,7 @@
 // Provides declarations for the DirectX Compiler API entry point.           //
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
-
+#include "dxc/Support/ErrorCodes.h"
 #ifndef __DXC_API__
 #define __DXC_API__
 
