@@ -839,11 +839,16 @@ int DxcContext::Compile() {
           outputPDBPath += pDebugName.m_pData;
         }
       } else {
-        IFT(pCompiler->Compile(pSource, StringRefWide(m_Opts.InputFile),
-          StringRefWide(m_Opts.EntryPoint),
-          StringRefWide(TargetProfile), args.data(),
-          args.size(), m_Opts.Defines.data(),
-          m_Opts.Defines.size(), pIncludeHandler, &pCompileResult));
+        try {
+          IFT(pCompiler->Compile(
+              pSource, StringRefWide(m_Opts.InputFile),
+              StringRefWide(m_Opts.EntryPoint), StringRefWide(TargetProfile),
+              args.data(), args.size(), m_Opts.Defines.data(),
+              m_Opts.Defines.size(), pIncludeHandler, &pCompileResult));
+        } catch (std::exception) 
+        {
+          fprintf(stdout, "Aborting compilation, error detected.");
+        }
       }
     }
 
@@ -860,9 +865,12 @@ int DxcContext::Compile() {
     IFT(pCompileResult->GetErrorBuffer(&pErrors));
     WriteBlobToFile(pErrors, m_Opts.OutputWarningsFile, m_Opts.DefaultTextCodePage);
   }
+  // The first compilation error will be written, and then output will stop.
+  // No need to print out all errors later.
+  /*
   else {
     WriteOperationErrorsToConsole(pCompileResult, m_Opts.OutputWarnings);
-  }
+  }*/
 
   HRESULT status;
   IFT(pCompileResult->GetStatus(&status));
