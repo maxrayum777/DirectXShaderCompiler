@@ -1769,7 +1769,7 @@ void HLSignatureLower::Run() {
   // Generate error and exit if semantic type
   // is not one of the allowed types
   if (!ValidateSemanticType(Entry))
-    return;
+    throw hlsl::Exception(DXC_E_NOT_SUPPORTED, "Semantic type invalid");
 
   DxilFunctionProps &props = HLM.GetDxilFunctionProps(Entry);
   if (props.IsGraphics()) {
