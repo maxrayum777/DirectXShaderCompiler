@@ -252,15 +252,6 @@ static void EmitWarningOrErrorOnFunction(llvm::LLVMContext &Ctx, Function *F,
                            nullptr /*InlinedAt*/);
   }
   Ctx.diagnose(DiagnosticInfoDxil(F, DLoc, Msg, severity));
-  if (severity == DiagnosticSeverity::DS_Error) {
-    if (Msg.isSingleStringRef()) {
-      std::string message = Msg.getSingleStringRef().str();
-      fprintf(stderr, "%s\n", message.c_str());
-    } else {
-      fprintf(stderr, "Error message can't be printed, is poorly formatted.");
-    }
-    throw std::exception();
-  }
 }
 
 void EmitErrorOnFunction(llvm::LLVMContext &Ctx, Function *F, Twine Msg) {

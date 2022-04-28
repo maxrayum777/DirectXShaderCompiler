@@ -43,6 +43,7 @@
 #include <memory>
 #include "dxc/HLSL/DxilGenerationPass.h" // HLSL Change
 #include "dxc/HLSL/HLMatrixLowerPass.h"  // HLSL Change
+#include "dxc/Support/Global.h"
 
 using namespace clang;
 using namespace llvm;
@@ -732,15 +733,13 @@ void EmitAssemblyHelper::EmitAssembly(BackendAction Action,
 
   // Run passes. For now we do all passes at once, but eventually we
   // would like to have the option of streaming code generation.
-
   if (PerFunctionPasses) {
     PrettyStackTraceString CrashInfo("Per-function optimization");
-
-    PerFunctionPasses->doInitialization();
-    for (Function &F : *TheModule)
-      if (!F.isDeclaration())
-        PerFunctionPasses->run(F);
-    PerFunctionPasses->doFinalization();
+      PerFunctionPasses->doInitialization();
+      for (Function &F : *TheModule)
+        if (!F.isDeclaration())
+          PerFunctionPasses->run(F);
+      PerFunctionPasses->doFinalization();
   }
 
   if (PerModulePasses) {
@@ -752,6 +751,7 @@ void EmitAssemblyHelper::EmitAssembly(BackendAction Action,
     PrettyStackTraceString CrashInfo("Code generation");
     CodeGenPasses->run(*TheModule);
   }
+
 }
 
 void clang::EmitBackendOutput(DiagnosticsEngine &Diags,
@@ -762,8 +762,17 @@ void clang::EmitBackendOutput(DiagnosticsEngine &Diags,
                               raw_pwrite_stream *OS) {
   EmitAssemblyHelper AsmHelper(Diags, CGOpts, TOpts, LOpts, M);
 
-  AsmHelper.EmitAssembly(Action, OS);
-
+  try {
+    AsmHelper.EmitAssembly(Action, OS);
+  }
+  catch (const ::hlsl::Exception &hlslException) {
+    const char *msg = hlslException.what();
+    const std::string msgStr(msg);
+    unsigned DiagID = Diags.getCustomDiagID(
+        DiagnosticsEngine::Error, "'%0'\nFatal error during optimization, aborting."
+                                  "expected target description '%1'");
+    Diags.Report(DiagID) << msgStr << TDesc;
+  }
   // If an optional clang TargetInfo description string was passed in, use it to
   // verify the LLVM TargetMachine's DataLayout.
   if (AsmHelper.TM && !TDesc.empty()) {
